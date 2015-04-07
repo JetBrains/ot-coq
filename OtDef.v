@@ -4,15 +4,15 @@ Section ExecAll.
 
 Context {C : Type} {X : Type}.
 
-Definition exec_all (f : C -> X -> option X) := foldl (flip (fun c => optf (f c))).
+Definition exec_all (f : C -> X -> option X) := foldl (flip (fun c => bind (f c))).
 
 Lemma exec_all_none {cs : seq C} {f}: (exec_all f) (@None X) cs = None. by elim: cs. Qed.
 
-Lemma exec_all_ind f t v vs: exec_all f t (v :: vs) = exec_all f (optf (f v) t) vs.
+Lemma exec_all_ind f t v vs: exec_all f t (v :: vs) = exec_all f (bind (f v) t) vs.
  by rewrite /=. Qed.
 
 Lemma exec_all_rcons_ind f vs v t: 
-      exec_all f t (rcons vs v) = optf (f v) (exec_all f t vs).
+      exec_all f t (rcons vs v) = bind (f v) (exec_all f t vs).
 by rewrite /exec_all -cats1 foldl_cat /flip /=. Qed.
 
 Lemma exec_all_cons f c cs t: exec_all f (Some t) (c :: cs) = exec_all f (f c t) (cs).
@@ -25,7 +25,7 @@ case: (f c t) => [a|]. by rewrite IH. by rewrite ?exec_all_none. Qed.
 
 Lemma exec_all_eqfun {f1 f2}: f1 =1 f2 -> forall (c : seq C) (m : option X), 
  exec_all f1 m c = exec_all f2 m c.
- move => A0. elim => [|x c IH] m //=. rewrite /optf /flip. case: m => [a|] //. by rewrite A0 IH. Qed.
+ move => A0. elim => [|x c IH] m //=. rewrite /bind /flip. case: m => [a|] //. by rewrite A0 IH. Qed.
 
 End ExecAll.
 

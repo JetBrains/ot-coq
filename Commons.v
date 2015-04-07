@@ -1,9 +1,9 @@
 Require Export ssreflect ssrfun ssrbool eqtype seq ssrnat Ssromega ssrbool Basics Equality.
 
-Definition optf {X} {Y} (f : X -> option Y) (x : option X) : option Y :=
+Definition bind {X} {Y} (f : X -> option Y) (x : option X) : option Y :=
  match x with Some x' => f x' | _ => None end.
 
-Definition maybe {X Y} (f : X -> Y) : option X -> option Y :=
+Definition fmap {X Y} (f : X -> Y) : option X -> option Y :=
   fun ox =>
     match ox with
     | Some x => Some (f x)
@@ -52,23 +52,13 @@ Section MonadicNotation.
 
 Context {A B : Type}.
 
-Definition fmap (ma : option A) (f : A -> B) : option B :=
- match ma with
-  | Some a => Some (f a)
-  | _ => None end.
-
-Definition bind (ma : option A) (f : A -> option B) : option B :=
- match ma with
- | Some a => f a
- | _ => None end.
-
 Definition true_some (b : bool) (f : B) : option B :=
  if b then Some f else None.
 
 End MonadicNotation.
 
 Notation "P --- Q" := (forall x, P x = false -> Q x = false) (at level 60).
-Notation "ma >>=  f" := (bind ma f) (at level 60).
+Notation "ma >>=  f" := (bind f ma) (at level 60).
 Notation "[! b !] f" := (true_some b f) (at level 60).
 
 Lemma compA {A B C D} (f3 : C -> D) (f2 : B -> C) (f1 : A -> B): (f3 \o f2) \o f1 =1 f3 \o (f2 \o f1). done. Qed.

@@ -251,8 +251,8 @@ elim: n l1 => [|n IHn] [|a l1] // _ /=.
 Lemma rm0 {Z : eqType} (l : seq Z): rm 0 [::] l = Some l. by case: l. Qed.
 (* TODO: Show that the result of transformation of two 
          nonempty operations is a composite of nonempty operations *)
-Theorem nonempty_it op1 op2 f: nonempty_op op1 -> nonempty_op op2 ->
- all nonempty_op (jit op1 op2 f).
+
+Theorem nonempty_it op1 op2 f: nonempty_op op1 -> nonempty_op op2 -> all nonempty_op (jit op1 op2 f).
  elim: op1 op2 => [n1 l1|n1 l1|n1 x1 l1|n1 [x1 l1]|n1 c1 IHc1|c1] 
                   [n2 l2|n2 l2|n2 x2 l2|n2 [x2 l2]|n2 c2|c2] //=; eauto;
  try by rewrite ?andbT.

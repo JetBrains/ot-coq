@@ -97,7 +97,7 @@ raw_fs_interp op (Node v cs) = Some t ->
 raw_fs_interp op (Node v' cs) = Some (Node v' (children t)).
 by case: op v v' cs t => [l l'|c |c |l op] v v' cs [vt cst] /=;
  [case: find => [[??]|] //=; case: has | case has | 
-  case find => [?|] //=; case eq_op | case: optf => a]; move => //= [] [] ? ->. Qed.
+  case find => [?|] //=; case eq_op | case: bind => a]; move => //= [] [] ? ->. Qed.
 
 Corollary interp_some c t t': raw_fs_interp c t = Some t' -> value t = value t'.
 move: (interp_label_preserving c t); rewrite /label_preserving.
@@ -130,7 +130,7 @@ Corollary raw_fs_interp_sorted_all c t t':
  is_tree_sorted R t -> exec_all (raw_fs_interp \o fs_to_raw_fs) (Some t) c = Some t' -> is_tree_sorted R t'.
 elim: c t => [|a c IH] t //=.
  + by move => A0 [] <-.
- + move => A0. rewrite /optf /flip. case A1: (raw_fs_interp (fs_to_raw_fs a) t) => [b|].
+ + move => A0. rewrite /bind /flip. case A1: (raw_fs_interp (fs_to_raw_fs a) t) => [b|].
   + apply (IH b (raw_fs_interp_sorted _ _ _ A0 A1)).
   + by rewrite exec_all_none. Qed.
 
@@ -142,14 +142,14 @@ Theorem ip1 c x y: is_tree_sorted R x -> raw_fs_interp c x = Some y -> raw_fs_in
  + case A0: has => [] //= [] <- <- {l} /=. by sop_simpl.
  + case A0: find => [[v1 cs1]|] //=. case A1: eq_op => //= [] [] <- <- {l}. move: A1 => /eqP A1; subst.
    sop_simpl => /=. rewrite insert_same //. apply Rord.
- + rewrite /optf /=. case A0: find => [[v1 cs1]|] //=. correct_label A0.
+ + rewrite /bind /=. case A0: find => [[v1 cs1]|] //=. correct_label A0.
    case A1: raw_fs_interp => [[v2 cs2]|] // [] <- <- {l}. move: (IH _ _ (find_sorted R _ _ _ _ S A0) A1) => A1'.
    correct_interp_label A1'. sop_simpl. rewrite A1'0. rewrite insert_same //. apply Rord. Qed.
 
 Lemma ip1_e v v' t mv mcs: sorted (treeR R) mcs ->
 find (by_value v) mcs = Some t -> has (by_value v') (without v mcs) = false ->
 (exec_all raw_fs_interp) (Some ((Node mv mcs))) ([:: RawEdit v v'; RawEdit v' v]) = Some (Node mv mcs).
-move: t => [v1 cs1] S A0 A1 /=; rewrite /optf /flip /= A0 /without' -lock A1 /=. correct_label A0. sop_simpl.
+move: t => [v1 cs1] S A0 A1 /=; rewrite /bind /flip /= A0 /without' -lock A1 /=. correct_label A0. sop_simpl.
 rewrite /= insert_same //. apply Rord. Qed.
 
 End Interpretation.
@@ -211,7 +211,7 @@ Corollary sd_commutes t v vs:
 
  elim: vs v t => [|v0 vs IH] v t //. rewrite 2!map_cons 2!exec_all_ind.
  move: (sd_step1 t v0 v) => A1; rewrite /= /flip in A1.
- rewrite -A1. remember (optf (raw_fs_interp (RawCreate v0)) t) as l1.
+ rewrite -A1. remember (bind (raw_fs_interp (RawCreate v0)) t) as l1.
  move: (IH v l1) => A2; rewrite /= /flip in A2. by rewrite A2 Heql1 rcons_cons. Qed.
 
 Local Notation insert_sorted := (insert_sorted R Rord).
@@ -223,12 +223,12 @@ Lemma sd_open (cmds : seq raw_fs_cmd) vs cs v: sorted (treeR R) cs -> has (by_va
 elim: cmds vs cs => [|c cmds IH] /= vs cs A0.
  + move => /has_find [a A1]; rewrite A1 /= insert_same //. apply Rord.
  + move => A1. assert (A1':=A1). move: A1' => /has_find [[vx xs]] A2.
-   rewrite /flip /= A2 /flip /optf /=.
+   rewrite /flip /= A2 /flip /bind /=.
    case A3: (raw_fs_interp c _) => [[av acs]|] /=; [| by rewrite ?exec_all_none].
    rewrite IH //; try (by apply insert_sorted, without_sorted);
    (move: A2 A3 => /find_pred; rewrite /by_value /= => /eqP -> /=);
    [|by move => /interp_some /= ->; rewrite has_insert /= eq_refl orb_true_r].  
-   rewrite /flip /optf => /interp_some /= ->. sop_simpl.
+   rewrite /flip /bind => /interp_some /= ->. sop_simpl.
    case A2: (exec_all _ _) => [a|] //. Qed.
 
 Lemma open_create v:
@@ -244,7 +244,7 @@ Lemma subdivision_step: forall t v xs, is_tree_sorted R (Node v xs) -> is_tree_s
   exec_all raw_fs_interp (Some t) ((RawCreate (Node v [::])) :: (map (fun t => RawOpen v (RawCreate t)) xs)) =
   raw_fs_interp (RawCreate (Node v xs)) t.
 move => [vt tcs]; intros. rewrite (@eq_map _ _ _ _ (open_create v)) exec_all_ind map_comp.
-move A0: (optf (raw_fs_interp (RawCreate (Node v [::]))) (Some (Node vt tcs))) => [[va csa]|] //=;
+move A0: (bind (raw_fs_interp (RawCreate (Node v [::]))) (Some (Node vt tcs))) => [[va csa]|] //=;
 move: A0 => /=; case A0: (has _ _) => //=; [move => [] [] -> <-| by rewrite exec_all_none].
  + rewrite sd_open. rewrite /flip /= without_insert_i //. sop_simpl. rewrite /= create_many ?has_without //.
  + use_sortedness H.
@@ -254,7 +254,7 @@ move: A0 => /=; case A0: (has _ _) => //=; [move => [] [] -> <-| by rewrite exec
 Lemma insert_subdivision: forall c t, is_tree_sorted R t -> is_tree_sorted R c -> 
   exec_all raw_fs_interp (Some t) (subdiv c) = raw_fs_interp (RawCreate c) t.
 elim => [v|v cs IH] [vt ts] A0 A1.
- + by rewrite /= /flip /optf /=.
+ + by rewrite /= /flip /bind /=.
  + rewrite -subdivision_step //. simpl subdiv. rewrite ?exec_all_cons.
    move A2: (raw_fs_interp _ _) => [[a1 as1]|]; rewrite ?exec_all_none //.
    move: A2 => /=. case A2: has => [] //= [] ? <-.
@@ -262,11 +262,11 @@ elim => [v|v cs IH] [vt ts] A0 A1.
     try (by rewrite insert_has_t // ?/by_value /= eq_refl);
     try (by rewrite insert_sorted //; move: A0 => /= /andP []; rewrite sorted_compatibility).
 
-   rewrite /flip /= /optf /=. case A3: (find (by_value v) _) => [a|] //.
+   rewrite /flip /= /bind /=. case A3: (find (by_value v) _) => [a|] //.
    assert (A3': is_tree_sorted R a).
    +  move: A3 => /=. by sop_simpl => [] [] <-.
    clear A3. elim: cs IH A0 A1 a A3' => [|c cs IHcs] IH A0 A1 a A3' //. 
-   rewrite ?map_cons /= /flip /optf.
+   rewrite ?map_cons /= /flip /bind.
    move: IH => [] A4 A5. rewrite exec_all_cat A4.
    move A6: (raw_fs_interp _ a) => [a'|].
    move: A5 => /IHcs A5. apply (A5 A0). 
@@ -388,7 +388,7 @@ move => f [v cs] [v' cs'] [v'' cs''] ?.
 case A0: (eq_op (value s) (value t)); move: A0; [move => /eqP| move => A0].
  + simpl => ->. rewrite eq_refl. case A1: find => [a| //] /=.
    repeat (case: eq_op => //=). move => <- <-. by split; eauto.
- + simpl raw_fs_it. rewrite eq_sym A0 /= /flip /optf /=.
+ + simpl raw_fs_it. rewrite eq_sym A0 /= /flip /bind /=.
    case A1: find => [tr'|]; case A2: find => [tr''|] //=; 
    case A3: eq_op; case A4: eq_op => //=. SearchAbout filter find.
    repeat (case => -> <-). rewrite /without' -lock ?find_filter ?A1 ?A2 /= ?A3 ?A4 /=;
@@ -398,7 +398,7 @@ case A0: (eq_op (value s) (value t)); move: A0; [move => /eqP| move => A0].
 Lemma c1_c_r tc tr: C1' (RawCreate tc) (RawRemove tr).
 move => f [v cs] [v' cs'] [v'' cs''] S /=.
 case A0: has => //= [] [] <- <-. case A1: find => [a|] //=. case A2: eq_op => //=.
-move: A2 => /eqP -> [] <- <-. rewrite /flip /optf /=.
+move: A2 => /eqP -> [] <- <-. rewrite /flip /bind /=.
 move: (find_pred A1); rewrite {1}/by_value /= => /eqP <-.
 case A2: (eq_op (value tc) (value tr)).
  + move: A2 A0 => /eqP ->. move /find_absent. by rewrite A1.
@@ -408,7 +408,7 @@ case A2: (eq_op (value tc) (value tr)).
 Lemma c1_c_e tc ve ve': C1' (RawCreate tc) (RawEdit ve ve').
 move => f [v cs] [v' cs'] [v'' cs''] S /=. rewrite /without' -lock.
 case A0: has => //= [] [] <- <-. case A1: find => [[av acs]|] //=. case A2: has => [] //= [] <- <-.
-rewrite eq_sym. case A3: (ve' == value tc) => /=; rewrite /flip /optf /=.
+rewrite eq_sym. case A3: (ve' == value tc) => /=; rewrite /flip /bind /=.
  + move: A3 A2 => /eqP -> A2. sop_simpl. rewrite A1 /= A2 /=. eauto.
  +  assert (H0: (value tc) == ve = false).
       by (case H1: eq_op => //; move: H1 A1 A0 => /eqP <- /find_has ->).
@@ -424,7 +424,7 @@ Lemma c1_r_e tr ve ve': C1' (RawRemove tr) (RawEdit ve ve').
 move => f [v cs] [v' cs'] [v'' cs''] /= S. rewrite /without' -lock.
 case A0: find => //= [a]. case A1: eq_op => //=. move: A1 A0 => /eqP <- A0 {a} [] <- <-.
 case A1: find => //= [[va csa]]. case A2: has => //= [] [] <- <-. assert (A1':=A1). 
-move: A1' A1 => /find_by_value <- A1. case A3: eq_op => //=; rewrite /flip /optf /=.
+move: A1' A1 => /find_by_value <- A1. case A3: eq_op => //=; rewrite /flip /bind /=.
  + sop_simpl. move: A3 A1 A2 => /eqP -> /=. rewrite A0 => [] [] -> /= A2. sop_simpl. eauto.
  + assert (H0: (value tr == ve') = false).
     (case H1: eq_op => //; move: H1 A0 A2 => /eqP <- /find_has; sop_simpl => -> //).
@@ -439,11 +439,11 @@ case A0: find => //= [[fa fcs]]. case A1: has => //= [] [] <- <-.
 case A0': find => //= [[ea ecs]]. case A1': has => //= [] [] <- <-.
 rewrite eq_sym. case A2: eq_op => /=; rewrite eq_sym; case A2': eq_op => /=.
  + move: A2 A2' => /eqP A2 /eqP A2'; subst. by move: A0 A0' => -> [] ? <-; eauto.
- + move: A2 => /eqP A2; subst; case f; rewrite /= /optf /flip /=; sop_simpl;
+ + move: A2 => /eqP A2; subst; case f; rewrite /= /bind /flip /=; sop_simpl;
    rewrite ?A1' ?A1 /=; by move: A0 A0' => -> [] ? ->; eauto.
  + move: (ip1_e vf vf' _ v _ H A0 A1). move: (ip1_e ve ve' _ v _ H A0' A1').
-   by rewrite /= {2 4}/flip {2 4}/optf /= A0 A0' /= /without' -lock A1 A1' /= => -> ->; eauto.  
- + rewrite /= /optf /flip /= /without' -lock .
+   by rewrite /= {2 4}/flip {2 4}/bind /= A0 A0' /= /without' -lock A1 A1' /= => -> ->; eauto.  
+ + rewrite /= /bind /flip /= /without' -lock .
    case A3: (vf == ve').
    * move: A3 => /eqP A3. by assert False; by move: A0 A1' => /find_has; sop_simpl => ->.
    * case A4: (ve == vf').
@@ -457,13 +457,13 @@ rewrite eq_sym. case A2: eq_op => /=; rewrite eq_sym; case A2': eq_op => /=.
 
 Lemma c1_o_e vc vc' vo op1: C1' (RawOpen vo op1) (RawEdit vc vc').
 move => f [v cs] [v' cs'] [v'' cs''] /= S. rewrite /without' -lock.
-case A0: optf => [a|] // [] <- <-. case A1: find => [[bv bcs]|] //=.
+case A0: bind => [a|] // [] <- <-. case A1: find => [[bv bcs]|] //=.
 move: (find_pred A1); rewrite {1}/by_value /= => /eqP H0; subst.
 case A2: has => //= [] [] <- <-. case A3: eq_op => /=.
- + move: A3 => /eqP A3. subst. rewrite /flip /optf /=. sop_simpl;
+ + move: A3 => /eqP A3. subst. rewrite /flip /bind /=. sop_simpl;
    destruct a as [va csa]. rewrite A1 /= in A0. correct_interp_label A0.   
    sop_simpl; rewrite A2 /=. eauto.
- + rewrite /flip /optf /=. case A4: (vc' == vo).
+ + rewrite /flip /bind /=. case A4: (vc' == vo).
   * move: A4 => /eqP A4. subst. move: A2 A0.
     rewrite eq_sym in A3. by rewrite without_has' // => /find_absent ->.
   * rewrite find_insert_f //; [|by rewrite /by_value /= eq_sym A4].
@@ -486,7 +486,7 @@ case A3: eq_op => [] //=; move: A3 A1 => /eqP -> /= A1 {s} [] <- <-.
  case A4: eq_op => [] /=.
  + move: A4 => /eqP A4; subst.
    move: A0. rewrite A1 => [] [] A3; subst.
-   rewrite A2 /= /optf /flip /=. sop_simpl; eauto.
+   rewrite A2 /= /bind /flip /=. sop_simpl; eauto.
  + rewrite /flip /=. sop_simpl; rewrite A0 /= A2 A1 /= eq_refl -without_insert;
     [ rewrite without_without; eauto | | use_sortedness S | rewrite eq_sym A4 //]; apply Rord. Qed.
 
@@ -494,7 +494,7 @@ Lemma c1_o_c s vo op1: C1' (RawOpen vo op1) (RawCreate s).
 move => f [v cs] [v' cs'] [v'' cs''] /= S.
 case A0: find => [[av acs]|] //=. correct_label A0.
 case A1: raw_fs_interp => [[bv bcs]|] //=. correct_interp_label A1 => [] [] <- <-.
-case A1: has => [] //= [] <- <-. rewrite /flip /= /optf /=.
+case A1: has => [] //= [] <- <-. rewrite /flip /= /bind /=.
 case A3: ((value s) == bv).
  + by move: A3 A0 A1=> /eqP <- /find_has ->.
  + rewrite find_insert_f; [| by rewrite /by_value /= eq_sym].
@@ -522,17 +522,17 @@ Lemma c1_o_o op1 op2: C1' op1 op2 ->
     move: (interp_some _ _ _ A1) (interp_some _ _ _ A2) => /= H1 H2; subst; subst.
     rewrite ?sd_open; try (by rewrite insert_has_t // /by_value /= eq_refl);
                       try (by use_sortedness S; apply Rord).
-    rewrite /flip /= /optf /=. sop_simpl;
+    rewrite /flip /= /bind /=. sop_simpl;
     move: IH0 => [] -> [] x ->. eauto.
 
-  * rewrite /optf /=.
+  * rewrite /bind /=.
     case A1: find => [[va csa]|] //=.
     case A2: find => [[vb csb]|] //=.
     case A4: raw_fs_interp => [[ve cse]|] //= [] [] <- <-.
     case A5: raw_fs_interp => [[vf csf]|] //= [] [] <- <-.
     move: (interp_some _ _ _ A4) (interp_some _ _ _ A5) => /= H1 H2; subst; subst.
     correct_label A1. correct_label A2.
-    rewrite /= /flip /= /optf /=. sop_simpl; rewrite A1 A2 A4 A5.
+    rewrite /= /flip /= /bind /=. sop_simpl; rewrite A1 A2 A4 A5.
     rewrite -(without_insert Rord _ ve) /=; [| by use_sortedness S; apply Rord |by rewrite A3].
     rewrite -(without_insert Rord _ vf) /=; [| by use_sortedness S; apply Rord |by rewrite eq_sym A3].
     rewrite insert_insert. rewrite without_without. eauto. apply Rord. Qed.
@@ -563,27 +563,27 @@ case A0: (raw_fs_interp (fs_to_raw_fs c) t) => [t'|] A1 //=. exact (raw_fs_inter
 Definition so_st (t : option (tree T)): sorted_option t -> option (sorted_tree R).
 case: t => [t|] /= A0. exact (Some (STree R t A0)). exact None. Defined.
 
-Lemma maybe_so_st t S: (maybe treeOf) (so_st t S) = t.
+Lemma fmap_so_st t S: (fmap treeOf) (so_st t S) = t.
  rewrite /so_st. by dependent destruction t. Qed.
 
 Definition ins_sorted (c : ins_cmd) (t : sorted_tree R) : option (sorted_tree R). 
 move: t => [t S]. apply (so_st (raw_fs_interp (fs_to_raw_fs (ins_fs' c)) t)), so_from_sorted, S. Defined.
  
 Lemma ins_sorted_treeOf c (s : sorted_tree R): 
- (maybe treeOf) (ins_sorted c s) = ins_interp c s.
-rewrite /ins_sorted. case: s => [t S] /=. by rewrite maybe_so_st /ins_interp. Qed.
+ (fmap treeOf) (ins_sorted c s) = ins_interp c s.
+rewrite /ins_sorted. case: s => [t S] /=. by rewrite fmap_so_st /ins_interp. Qed.
 
 Lemma ins_compat x: fs_to_raw_fs (ins_fs' x) = ins_fs x.
 elim: x => [t|t c IH] //=. by rewrite IH. Qed.
 
 Corollary ins_compat': fs_to_raw_fs \o ins_fs' =1 ins_fs. apply /ins_compat. Qed.
 
-Lemma exec_ins_compat: forall c s, (maybe treeOf) (exec_all ins_sorted (Some s) c) = 
+Lemma exec_ins_compat: forall c s, (fmap treeOf) (exec_all ins_sorted (Some s) c) = 
   exec_all (raw_fs_interp \o ins_fs) (Some (treeOf s)) c.
 apply (@last_ind ins_cmd (fun c => 
- forall s, maybe treeOf (exec_all ins_sorted (Some s) c) = exec_all (raw_fs_interp \o ins_fs) (Some (treeOf s)) c)).
+ forall s, fmap treeOf (exec_all ins_sorted (Some s) c) = exec_all (raw_fs_interp \o ins_fs) (Some (treeOf s)) c)).
  + done. 
- + intros s x IH s'. rewrite 2!exec_all_rcons_ind /= /optf /flip -IH. 
+ + intros s x IH s'. rewrite 2!exec_all_rcons_ind /= /bind /flip -IH. 
    case A0: exec_all => [b|] //=. by rewrite ins_sorted_treeOf /ins_interp ins_compat. Qed.
 
 Lemma ins_fs_fs'_compat m c:

@@ -100,7 +100,7 @@ Lemma st_eq (t1 t2 : sorted_tree): t1 = t2 <-> treeOf t1 = treeOf t2.
  + case: t1 t2 => [t1 S1] [t2 S2] /= A0. subst.
    by move: (proof_irrelevance _ S1 S2) => ->. Qed.
 
-Corollary opt_eq (t1 t2 : option sorted_tree): t1 = t2 <-> (maybe treeOf) t1 = (maybe treeOf) t2.
+Corollary opt_eq (t1 t2 : option sorted_tree): t1 = t2 <-> (fmap treeOf) t1 = (fmap treeOf) t2.
 case: t1 t2 => [t1|] [t2|] //=. by split; case => /st_eq ->. Qed.
 
 Definition treeR (x y : tree T) := R (value x) (value y).
@@ -290,7 +290,7 @@ Definition label_preserving (f : tree T -> option (tree T)) :=
 
 Definition open (f : tree T -> option (tree T)) (vo : T) (t : tree T) := 
  match t with Node v cs => 
-   match (optf f) (find (by_value vo) cs) with 
+   match (bind f) (find (by_value vo) cs) with 
      Some fch => Some (Node v (insert fch (without vo cs)))
      | _ => None end end.
 

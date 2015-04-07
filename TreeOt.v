@@ -38,7 +38,7 @@ end.
 Fixpoint tree_interp (op1 : tree_command) (tr : tree_eqType X) : option (tree X) :=
 match tr with Node x ls =>
  match op1 with
-  | OpenRoot n c => NodeW x (rplc n (optf (tree_interp c) (nth n ls)) ls)
+  | OpenRoot n c => NodeW x (rplc n (bind (tree_interp c) (nth n ls)) ls)
   | Atomic c => list_interp c tr
  end 
 end.
@@ -86,7 +86,7 @@ match op1, op2 with
   | Atomic (TreeRemove n1 l1), OpenRoot n2 tc2 =>
     match tr_rem (size l1) n2 n1 with
       None => let i := n2 - n1 in 
-      match rplc i ((optf (tree_interp tc2)) (nth i l1)) l1 with
+      match rplc i ((bind (tree_interp tc2)) (nth i l1)) l1 with
         | Some l1' => [:: Atomic (TreeRemove n1 l1')]
         | _ => [:: op1]
       end
@@ -143,7 +143,7 @@ Proof. elim: cs xs => [|c cs IHcs] xs /=.
     * by move=> /rplc_nth_id' ->.
     * by move /nth_noneP; rewrite ltnNge; case: leq.
  + move=> Hsz. rewrite ?/flip => /=. 
-   move A0: (optf (tree_interp c) (nth n xs)) => [t|] /=.
+   move A0: (bind (tree_interp c) (nth n xs)) => [t|] /=.
  + case A1: rplc => [t'|] /=.
      rewrite IHcs.
      * move: (A1) => /rplc_nth_eq ->.
@@ -195,7 +195,7 @@ Proof. move => n1 l1 x ls [x1 ls1] [x2 ls2] _ _ n2 l2 //=;
 Lemma remove_openroot_commutation :  
 forall n1 l1 x ls (m1 m2 : tree_eqType X) (f g: bool) (t : tree_command) (n : nat),
    NodeW x (rm n1 l1 ls) = Some m1 ->
-   NodeW x (rplc n ((optf (tree_interp t)) (nth n ls)) ls) = Some m2 ->
+   NodeW x (rplc n ((bind (tree_interp t)) (nth n ls)) ls) = Some m2 ->
    (exec_all tree_interp) (Some m2)
      (tree_it (Atomic (TreeRemove n1 l1)) (OpenRoot n t) f) =
    (exec_all tree_interp) (Some m1)
@@ -205,13 +205,13 @@ forall n1 l1 x ls (m1 m2 : tree_eqType X) (f g: bool) (t : tree_command) (n : na
 Proof. move=> n1 l1 x ls [x1 ls1] [x2 ls2] _ _ t n2 //=; case Htr_rem: tr_rem => [n|]. 
    + interp_simpl_nw. move: Htr_rem; rewrite /tr_rem; case H1: (n2 < n1).
     - move=> [] <-; rewrite (rm_some_nth_aft _ ls _ l1 n1) //.
-      move: HN2. case: (optf (tree_interp t)) => //= [a|]; last by rewrite rplc_none_none.
+      move: HN2. case: (bind (tree_interp t)) => //= [a|]; last by rewrite rplc_none_none.
       move => /rplc_some []. swap => _. move: HN0 => /=. move: H1. 
       maxapply (@rplc_rmC_bef (tree_eqType X)) => /(_ a) [] -> [os] -> /=. by eauto.
     - case H2: (n1 + size l1 <= n2) => //. move=> [] <-; 
       move: (arithm1'  H2 H1) HN2 => [] {2 3 4 5 8 9}-> Hleq. 
       simpl in HN0. rewrite (rm_some_nth_bef n1 ls _ l1 (n2 - size l1)) //.
-      case: (optf (tree_interp t)) => [a /=|]; last by rewrite orplc_none //=.
+      case: (bind (tree_interp t)) => [a /=|]; last by rewrite orplc_none //=.
       move=> /rplc_some []. swap => _. rewrite addnC. move: Hleq HN0.
       maxapply (@rplc_rmC_aft (tree_eqType X)) => /(_ a) [] -> [os] -> /=. by eauto.
    + move: Htr_rem; rewrite /tr_rem; case H1: (n2 < n1) => //; 
@@ -223,11 +223,11 @@ Proof. move=> n1 l1 x ls [x1 ls1] [x2 ls2] _ _ t n2 //=; case Htr_rem: tr_rem =>
      - inspect_nodew.
        rewrite nodew_some; simpl in Hrm_some. rewrite (rplc_rmC_in ls1 _ l1) /=; try by eauto.
      - by move: Hrplc; rewrite rplc_none_case; move: H2'; rewrite ltnNge => /negbTE -> /=;
-       case: (optf (tree_interp t)) => [? [] //|] //; rewrite rplc_none_none. Qed.
+       case: (bind (tree_interp t)) => [? [] //|] //; rewrite rplc_none_none. Qed.
 
 Lemma insert_openroot_commutation: 
 forall n1 l1 x ls (m1 m2 : tree X) (n : nat) (t : tree_command),
-   NodeW x (rplc n (optf (tree_interp t) (nth n ls)) ls) = Some m2 ->
+   NodeW x (rplc n (bind (tree_interp t) (nth n ls)) ls) = Some m2 ->
    NodeW x (ins n1 l1 ls) = Some m1 ->
    flip tree_interp m2 (Atomic (TreeInsert n1 l1)) =
    flip tree_interp m1
@@ -242,11 +242,11 @@ Proof.
   move: Hrplc; rewrite (ins_some_nth_bef ls1 l1 n1) // => Hrplc];
  interp_simpl => //; rewrite -H2.
  * move: H2 => /ins_some [] _. move: Hltn. move=> /rplc_insC_bef A /A B.
-   case: (optf (tree_interp t)) Hrplc => [ti_r|]. move: (B ti_r l1) => [] <- [os] ->. 
+   case: (bind (tree_interp t)) Hrplc => [ti_r|]. move: (B ti_r l1) => [] <- [os] ->. 
    split=> //. by exists (Node x os).
    by rewrite orplc_some orplc_none.
  * rewrite addnC addnC.
-   case: (optf (tree_interp t)) Hrplc => [ti_r|]; last by rewrite orplc_some orplc_none.
+   case: (bind (tree_interp t)) Hrplc => [ti_r|]; last by rewrite orplc_some orplc_none.
    move: Hltn => /rplc_insC_aft A => /rplc_some [] /A B _. 
    move: (B ti_r l1) => [] -> [os] ->. split=> //. by exists (Node x os). Qed.
 
@@ -301,7 +301,7 @@ elim => [[n1 l1 | n1 l1 | c1 ]| n1 c1 IHl1] [[n2 l2 | n2 l2 | c2] | n2 c2]
    + move: (arithm2 H2) HN0 HN2 => [] {2}-> /rm_rmC A/A B/B [].
      move: H2 => /leq_addWl /(addnBA (size l1)) ->. rewrite addnC.      
      rewrite -addnBA; last exact: (leqnn _). rewrite subnn addn0 /= => -> [os] -> /=. by eauto.
-   + case H3: (n2 <= n1); case H4: (n1 <= n2) => /=; rewrite /optf /flip /tree_interp;
+   + case H3: (n2 <= n1); case H4: (n1 <= n2) => /=; rewrite /bind /flip /tree_interp;
      rewrite ?orm_some; interp_simpl; inspect_nodew; move: HN0 HN2.
      - move/andP: (conj H3 H4). rewrite -eqn_leq => /eqP ->.
        move=> /rm_cut A /A B. move: (B (leqnn _) (leq_addr _ _)).
@@ -347,12 +347,12 @@ elim => [[n1 l1 | n1 l1 | c1 ]| n1 c1 IHl1] [[n2 l2 | n2 l2 | c2] | n2 c2]
      
      interp_simpl_nw. rewrite eq_sym in Heq. rewrite rplc_rplcC_neq //. move: (HN0) (HN2).
      move=> /negbT in Heq. simpl in HN0, HN2.
-     rewrite ?(rplc_nth_neq n2 n1 _ ls1 ((optf (tree_interp c1)) (nth n1 ls))) //.
+     rewrite ?(rplc_nth_neq n2 n1 _ ls1 ((bind (tree_interp c1)) (nth n1 ls))) //.
      rewrite eq_sym in Heq.
-     rewrite ?(rplc_nth_neq n1 n2 _ ls2 ((optf (tree_interp c2)) (nth n2 ls))) //.
+     rewrite ?(rplc_nth_neq n1 n2 _ ls2 ((bind (tree_interp c2)) (nth n2 ls))) //.
      split => //. move: HN3 => /= /rplc_some [] Hlt' [e'] ->.
      case Hrplc: rplc => [a|]. move: Hrplc => /rplc_some_len Heqsz.
-     case: (optf (tree_interp c2)) HN4 => [b _|] //=; last by rewrite rplc_none_none.
+     case: (bind (tree_interp c2)) HN4 => [b _|] //=; last by rewrite rplc_none_none.
      case Hrplc': rplc => [a'|]. 
     - by exists (Node x2 a').
     - move: Hrplc' => /rplc_noneP1; move: HN2 => /rplc_some []. swap => _.
@@ -371,9 +371,9 @@ Proof.
    have: (0 < size (x1 :: l1)); first by exact (ltn0Sn _).
    swap => /nodew_some [] <-. maxapply (@ins_rm_id (tree_eqType X)). by move=> /= ->.
  + case Hint: interp => [a|] // [] <- <-. apply ip1 in Hint. by rewrite Hint.
- + move=> /nodew_some [] <-. case Hti: (optf (tree_interp c)) => [ti_r|]; last by rewrite rplc_none_none.
+ + move=> /nodew_some [] <-. case Hti: (bind (tree_interp c)) => [ti_r|]; last by rewrite rplc_none_none.
    move: Hti. case Hnth: nth => [nth_r|]; last by simpl.
-   move=> /IHc. swap. move => Hrplc. move: (Hrplc) => /rplc_nth_eq => ->. rewrite /optf => ->.
+   move=> /IHc. swap. move => Hrplc. move: (Hrplc) => /rplc_nth_eq => ->. rewrite /bind => ->.
    rewrite orplc_some -Hrplc -Hnth orplc_some rplc_rplcC_eq. 
    case Horplc: orplc => [a|]. 
   - move: (Horplc) (Horplc). move /rplc_nth_id -> => //.

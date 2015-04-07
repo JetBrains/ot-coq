@@ -4,7 +4,7 @@ Section Lists.
 
 Context {X : eqType}.
 
-Definition weak_cons (x : X) := optf (fun (xs : list X) => Some (x :: xs)).
+Definition weak_cons (x : X) := bind (fun (xs : list X) => Some (x :: xs)).
 
 Definition weak_app (xs : seq X) ys :=
 match ys with
@@ -40,7 +40,7 @@ Fixpoint ins (i : nat) (es : seq X) (xs : seq X) :=
  end.
 
 Definition oins (i : nat) (es : seq X) :=
-  optf (ins i es).
+  bind (ins i es).
 
 Lemma oins_some n es xs: ins n es xs = oins n es (Some xs).
 Proof. done. Qed.
@@ -94,7 +94,7 @@ Fixpoint rm
  end.
 
 Definition orm (index : nat) (elements : seq X) :=
- optf (rm index elements).
+ bind (rm index elements).
 
 Lemma orm_some n es xs: rm n es xs = orm n es (Some xs).
 Proof. done. Qed.
@@ -174,12 +174,12 @@ Proof. elim: xs1 k xs2 => [|x1 xs1 IHxs1] k xs2 //=. Qed.
 
 Fixpoint rplc (n : nat) (e : option X) (xs : seq X) :=
 match n, xs with
- | 0, x :: xs' => optf (fun e' => Some (e' :: xs')) e
+ | 0, x :: xs' => bind (fun e' => Some (e' :: xs')) e
  | S n', x :: xs' => x :~: rplc n' e xs'
  | _, _ => None
 end.
 
-Definition orplc (index : nat) (e : option X) := optf (rplc index e).
+Definition orplc (index : nat) (e : option X) := bind (rplc index e).
 
 Lemma orplc_some n e xs: rplc n e xs = orplc n e (Some xs).
 Proof. done. Qed.
