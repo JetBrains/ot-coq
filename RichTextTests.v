@@ -1,9 +1,8 @@
-Require Import ssreflect ssrbool ssrnat ssrint eqtype seq.
-Require Import ListTools Tree OtDef RichText String Basics.
+Require Import Commons Tree OtDef RichText String Basics.
+Require Import mathcomp.algebra.ssrint.
+Require Import ListTools.
 
 Import intZmod.
-
-Check int.
 
 Instance intOT : OTBase int int
  := {interp := (fun c m => Some (addz m c)); it := (fun o1 o2 f => [:: o1])}.

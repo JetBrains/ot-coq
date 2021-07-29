@@ -1,4 +1,4 @@
-Require Import eqtype seq path ssrfun.
+Require Import mathcomp.ssreflect.path.
 Require Import Commons Tree OtDef ListTools Comp SortedTree.
 Import Bool.
 

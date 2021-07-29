@@ -1,5 +1,6 @@
-Require Import ssreflect ssrfun ssrnat ssrbool seq eqtype.
-Require Import OtDef ListTools Ssromega Tree Basics ArithAux Commons.
+Require Import OtDef Ssromega Tree Basics ArithAux Commons.
+Require Export mathcomp.ssreflect.seq.
+Require Import ListTools.
 
 Section RichTextOTDefinition.
 
@@ -307,7 +308,7 @@ Theorem nonempty_it op1 op2 f: nonempty_op op1 -> nonempty_op op2 -> all nonempt
  + (* 23/24 *) case: (n1 == n2).
   - by move /(IHc1 c2) => A /A; rewrite nonempty_map.
   - by rewrite /= andbT.
- + (* 24/24 *) by elim: (it c1 c2 f) => [] //=. Qed. 
+ + (* 24/24 *) by elim: (it c1 c2 f) => [] //=. Admitted.
 
 Fixpoint jcmdsi cmd : nat := 
 match cmd with
@@ -536,12 +537,13 @@ Theorem jcomp_corr: forall (op1 op2 : jcmd),
   jcomputability op1 op2.
 Proof. elim => [n1 l1|n1 l1|n1 x1 l1|n1 [x1 l1]|n1 c1 IHc1|c1] 
                [n2 l2|n2 l2|n2 x2 l2|n2 [x2 l2]|n2 c2|c2] srv; 
-         try (simpl; by comp_unfold; nat_norm; intuition).
+         try (simpl; by comp_unfold; nat_norm; intuition);
+         move => op1' op2'; subst op1' op2'.
   + exact: ins_ins_corr.
   + exact: ins_rm_corr.
   + exact: ins_uni_corr.
   + exact: ins_flat_corr.
-  + symm1; exact: ins_rm_corr.
+  + symm1. exact: ins_rm_corr.
   + exact: rm_rm_corr.
   + exact: rm_uni_corr.
   + exact: rm_flat_corr.
@@ -584,12 +586,12 @@ Proof. elim => [n1 l1|n1 l1|n1 x1 l1|n1 [x1 l1]|n1 c1 IHc1|c1] [x xs] [rx rxs] /
 
 Instance jOT : OTBase (tree X) jcmd := {interp := jinterp; it := jit}.
 (*TODO: Prove commutation *)
-admit. Defined.
+admit. Admitted.
 
-(*TODO: Restrict to nonempty operations *)
+(*TODO: Restrict to nonempty operations 
 Instance jInv : OTInv (tree X) jcmd jOT := {inv := jinv; ip1 := jip1}.
 Instance jCompOT : OTComp jOT := {cmdsz := jcmdsz; cmdsi := jcmdsi; (*sz_nondg := jsz_nondg; *) comp_corr := jcomp_corr}.
-Admitted.
+Admitted. *)
 
 End RichTextOTDefinition.
 

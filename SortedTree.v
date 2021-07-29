@@ -1,5 +1,5 @@
-Require Import eqtype seq path ssrfun.
 Require Import Basics Commons Tree OtDef ListTools Comp.
+Require Export mathcomp.ssreflect.path.
 Import Bool.
 
 Definition asymmetric {T} (R : rel T) := (forall x y : T, R x y = ~~(R y x)).
