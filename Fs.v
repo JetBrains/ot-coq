@@ -47,6 +47,7 @@ Ltac correct_interp_label A := let A' := fresh A in
 
 Section FsCmd.
 
+
 Inductive fs_cmd :=
  | Edit   of T & T
  | Create (c : sorted_tree R)
@@ -327,9 +328,9 @@ case A1: eq_op => /=.
     apply tstab with (k:=n01 + n' +1) in A02. move: A02.
     rewrite ?addnA (addnC n02) -Heqn addn1 addnC -Heqn1 => ->.
     rewrite /in_mem /= eq_sym A1 /= /in_mem /=.
-    case C0: (@pred_of_eq_seq ins_cmd_eqType l1 x2);
-    case C1: (@pred_of_eq_seq ins_cmd_eqType l2 x1) => /=; rewrite ?seqminus_cat /=;
-    (rewrite -(seqminus_cons' l1 [::x2] x1); [by rewrite seqminus_p1| by rewrite /in_mem /= A1]). Qed.
+    case C0: ([eta mem_seq l1] x2);
+    case C1: ([eta mem_seq l2] x1) => /=; rewrite ?seqminus_cat /=;
+    (rewrite -(seqminus_cons' l1 [::x2] x1); [rewrite seqminus_p1; try done| by rewrite /in_mem /= A1]). Qed.
 
 Lemma subdiv_prime x: subdiv x = map ins_fs (subdiv' x).
 elim: x => [x|x xs IH] //=.
@@ -390,7 +391,7 @@ case A0: (eq_op (value s) (value t)); move: A0; [move => /eqP| move => A0].
    repeat (case: eq_op => //=). move => <- <-. by split; eauto.
  + simpl raw_fs_it. rewrite eq_sym A0 /= /flip /bind /=.
    case A1: find => [tr'|]; case A2: find => [tr''|] //=; 
-   case A3: eq_op; case A4: eq_op => //=. SearchAbout filter find.
+   case A3: eq_op; case A4: eq_op => //=. 
    repeat (case => -> <-). rewrite /without' -lock ?find_filter ?A1 ?A2 /= ?A3 ?A4 /=;
      [|apply by_diff_values; rewrite eq_sym| apply by_diff_values] => //.
    rewrite without_without. eauto. Qed.
@@ -563,14 +564,14 @@ case A0: (raw_fs_interp (fs_to_raw_fs c) t) => [t'|] A1 //=. exact (raw_fs_inter
 Definition so_st (t : option (tree T)): sorted_option t -> option (sorted_tree R).
 case: t => [t|] /= A0. exact (Some (STree R t A0)). exact None. Defined.
 
-Lemma fmap_so_st t S: (fmap treeOf) (so_st t S) = t.
+Lemma fmap_so_st t S: (fmap (@treeOf T R)) (so_st t S) = t.
  rewrite /so_st. by dependent destruction t. Qed.
 
 Definition ins_sorted (c : ins_cmd) (t : sorted_tree R) : option (sorted_tree R). 
 move: t => [t S]. apply (so_st (raw_fs_interp (fs_to_raw_fs (ins_fs' c)) t)), so_from_sorted, S. Defined.
  
 Lemma ins_sorted_treeOf c (s : sorted_tree R): 
- (fmap treeOf) (ins_sorted c s) = ins_interp c s.
+ (fmap (@treeOf T R)) (ins_sorted c s) = ins_interp c s.
 rewrite /ins_sorted. case: s => [t S] /=. by rewrite fmap_so_st /ins_interp. Qed.
 
 Lemma ins_compat x: fs_to_raw_fs (ins_fs' x) = ins_fs x.
@@ -578,10 +579,10 @@ elim: x => [t|t c IH] //=. by rewrite IH. Qed.
 
 Corollary ins_compat': fs_to_raw_fs \o ins_fs' =1 ins_fs. apply /ins_compat. Qed.
 
-Lemma exec_ins_compat: forall c s, (fmap treeOf) (exec_all ins_sorted (Some s) c) = 
+Lemma exec_ins_compat: forall c s, (fmap (@treeOf T R)) (exec_all ins_sorted (Some s) c) = 
   exec_all (raw_fs_interp \o ins_fs) (Some (treeOf s)) c.
 apply (@last_ind ins_cmd (fun c => 
- forall s, fmap treeOf (exec_all ins_sorted (Some s) c) = exec_all (raw_fs_interp \o ins_fs) (Some (treeOf s)) c)).
+ forall s, fmap (@treeOf T R) (exec_all ins_sorted (Some s) c) = exec_all (raw_fs_interp \o ins_fs) (Some (treeOf s)) c)).
  + done. 
  + intros s x IH s'. rewrite 2!exec_all_rcons_ind /= /bind /flip -IH. 
    case A0: exec_all => [b|] //=. by rewrite ins_sorted_treeOf /ins_interp ins_compat. Qed.
@@ -592,7 +593,13 @@ case: m => [m|].
  + by rewrite (exec_all_compat _ ins_fs') (exec_all_eqfun (compA _ _ _)) (exec_all_eqfun (eq_comp (frefl _) ins_compat')).
  + by rewrite ?exec_all_none. Qed.
 
-Instance insOT': (OTBase (sorted_tree R) ins_cmd) := {interp := ins_sorted; it := ins_it}.
+Theorem c1: forall (op1 op2 : ins_cmd) (f : bool) (m m1 m2 : sorted_tree R),
+ ins_sorted op1 m = Some m1 ->
+ ins_sorted op2 m = Some m2 ->
+ let m21 := exec_all ins_sorted (Some m2) (ins_it op1 op2 f) in
+ let m12 := exec_all ins_sorted (Some m1) (ins_it op2 op1 (~~ f)) in
+ m21 = m12 /\ (exists node : sorted_tree R, m21 = Some node).
+
 intros. rewrite /m21 /m12 => {m12} {m21}.
 case: m m1 m2 H H0 => [m S] [m1 S1] [m2 S2].
 
@@ -604,7 +611,9 @@ move: (c1_ins op1 op2 f m m1 m2 S H H0) => [] A0 A1. split.
  + apply opt_eq. by rewrite ?exec_ins_compat /= -?(exec_all_compat raw_fs_interp ins_fs) -?ins_fs_comp A0.
  + move: A1 => [t]. rewrite ins_fs_comp exec_all_compat -ins_fs_fs'_compat => A1. assert (A1' := A1).
    move: A1 => /raw_fs_interp_sorted_all A1. exists (STree R t (A1 S2)) => /=. apply opt_eq.
-   by rewrite /= -A1' exec_ins_compat ins_fs_fs'_compat /=. Defined.
+   by rewrite /= -A1' exec_ins_compat ins_fs_fs'_compat /=. Qed.
+
+Instance insOT': (OTBase (sorted_tree R) ins_cmd) := {interp := ins_sorted; it := ins_it; it_c1:=c1}.
 
 Definition firstP (x : ins_cmd) := match x with | Ins t => t | IOpen t c => t end.
 
@@ -656,7 +665,7 @@ move: (ot_execution insOT' n (subdiv' s) (subdiv' t)
 by split; [move: C1 | move: C2 => [[m3t S3]] /= C2; exists m3t; move: C2]; move => /opt_eq /=;
 rewrite ?exec_ins_compat /= -?A1 -?A2 ?ins_fs_fs'_compat ?(exec_all_compat _ ins_fs). apply Rord. Qed.
 
-Theorem c1 (op1 op2 : fs_cmd): C1' (fs_to_raw_fs op1) (fs_to_raw_fs op2).
+Theorem c1' (op1 op2 : fs_cmd): C1' (fs_to_raw_fs op1) (fs_to_raw_fs op2).
 
 elim: op1 op2 => [l1 l1'|c1|c1|l1 op1 IH] [l2 l2'|c2|c2|l2 op2];
  (try by elem_case); (try by apply C1'_C; elem_case).

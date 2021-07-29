@@ -23,10 +23,10 @@ Definition maybe_eq {X} (eq : X -> X -> Prop) : option X -> option X -> Prop :=
     end.
 
 Lemma fadd {X} {F : X -> nat} n l: foldl addn n [seq F i | i <- l] = n + foldl addn 0 [seq F i | i <- l].
-elim: l n => [|l ls IHl] //= n. by rewrite add0n (IHl (n + F l)) (IHl (F l)) addnA. Qed.
+elim: l n => [|l ls IHl] //= n. by rewrite addn0. by rewrite add0n (IHl (n + F l)) (IHl (F l)) addnA. Qed.
 
 Lemma faddr {X} {F : X -> nat} n l: foldr addn n [seq F i | i <- l] = n + foldr addn 0 [seq F i | i <- l].
-elim: l n => [|l ls IHl] //= n. by rewrite addnA (addnC n) -addnA -(IHl n). Qed.
+elim: l n => [|l ls IHl] //= n. by rewrite addn0. by rewrite addnA (addnC n) -addnA -(IHl n). Qed.
 
 (* Some Numeric facts*)
 

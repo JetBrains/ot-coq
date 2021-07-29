@@ -351,7 +351,9 @@ Lemma weights_rm (l1 : seq (tree X)) l2 l3 n: rm n l2 l1 = Some l3 ->
  weights l3 + weights l2 = weights l1.
 elim: n l1 l2 l3 => [|n IHn] //.
  + move => l1 l2 l3 => /rm_eq <-. by rewrite weights_app addnC.
- + case => [|a1 l1] /= [|a2 l2] l3 //; try by case => <-.
+ + case => [|a1 l1] /= [|a2 l2] l3 //. 
+  + by case => <-. 
+  + case => <- /=. by rewrite {2}/weights /= addn0.
   + move => /wcons_some [] x [] /IHn; rewrite ?weights_cons => <- ->.
     by rewrite weights_cons ?addnA. Qed.
 
@@ -584,9 +586,15 @@ Proof. elim => [n1 l1|n1 l1|n1 x1 l1|n1 [x1 l1]|n1 c1 IHc1|c1] [x xs] [rx rxs] /
  + case Hinterp: interp => [?|] // [] <- <-.
    by move: (@ip1 _ _ _ ipX _ _ _ Hinterp) ->. Qed.
 
-Instance jOT : OTBase (tree X) jcmd := {interp := jinterp; it := jit}.
+Theorem c1: forall (op1 op2 : jcmd) (f : bool) (m m1 m2 : tree X),
+ jinterp op1 m = Some m1 ->
+ jinterp op2 m = Some m2 ->
+ let m21 := exec_all jinterp (Some m2) (jit op1 op2 f) in let m12 := exec_all jinterp (Some m1) (jit op2 op1 (~~ f)) in m21 = m12 /\ (exists node : tree X, m21 = Some node).
+Admitted.
+
+Instance jOT : OTBase (tree X) jcmd := {interp := jinterp; it := jit; it_c1:=c1}.
 (*TODO: Prove commutation *)
-admit. Admitted.
+
 
 (*TODO: Restrict to nonempty operations 
 Instance jInv : OTInv (tree X) jcmd jOT := {inv := jinv; ip1 := jip1}.
@@ -595,9 +603,9 @@ Admitted. *)
 
 End RichTextOTDefinition.
 
-Implicit Arguments JEditLabel [[C] [X]].
-Implicit Arguments JInsert [[C] [X]].
-Implicit Arguments JRemove [[C] [X]].
-Implicit Arguments JUnite [[C] [X]].
-Implicit Arguments JFlat [[C] [X]].
-Implicit Arguments JOpenRoot [[C] [X]].
+Arguments JEditLabel [X] [C].
+Arguments JInsert [X] [C].
+Arguments JRemove [X] [C].
+Arguments JUnite [X] [C].
+Arguments JFlat [X] [C].
+Arguments JOpenRoot [X] [C].

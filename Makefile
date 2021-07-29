@@ -79,8 +79,7 @@ endif
 # Files dispatching. #
 #                    #
 ######################
-
-VFILES:=Ssromega.v\
+VFILES:= Ssromega.v\
   Commons.v\
   ListTools.v\
   OtDef.v\

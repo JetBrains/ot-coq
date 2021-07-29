@@ -389,14 +389,20 @@ End TreeOTDefinition.
 Section Sandbox.
 
 Require Import Comp.
+Arguments TreeInsert [X] [cmd].
+Arguments TreeRemove [X] [cmd].
+Arguments OpenRoot [X] [cmd].
+Arguments Atomic [X] [cmd].
 
-Implicit Arguments TreeInsert [[cmd] [X]].
-Implicit Arguments TreeRemove [[cmd] [X]].
-Implicit Arguments OpenRoot [[cmd] [X]].
-Implicit Arguments Atomic [[cmd] [X]].
-
-Instance unitOT : OTBase nat_eqType unit := {interp := (fun c m => Some m); it := (fun _ _ _ => [:: tt])}.
+Theorem c1: forall (op1 op2 : unit) (f : bool) (m m1 m2 : nat_eqType),
+ (fun=> [eta Some]) op1 m = Some m1 ->
+ (fun=> [eta Some]) op2 m = Some m2 ->
+ let m21 := exec_all (fun=> [eta Some]) (Some m2) ((fun=> (fun=> (fun=> [:: tt]))) op1 op2 f) in
+ let m12 := exec_all (fun=> [eta Some]) (Some m1) ((fun=> (fun=> (fun=> [:: tt]))) op2 op1 (~~ f)) in m21 = m12 /\ (exists node : nat_eqType, m21 = Some node).
 move => _ _ _ m m1 m2 [] <- [] <- /=. split. done. exists m. by rewrite /flip. Qed.
+
+Instance unitOT : OTBase nat_eqType unit := {interp := (fun c m => Some m); it := (fun _ _ _ => [:: tt]); it_c1:=c1}.
+
 Definition it1 := transform (@tree_it nat_eqType unit unitOT).
 
 Definition abclist := [:: Node 10 [::]; Node 11 [::]; Node 12 [::]].
