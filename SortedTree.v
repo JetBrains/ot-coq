@@ -1,5 +1,5 @@
-Require Import eqtype seq path ssrfun.
 Require Import Basics Commons Tree OtDef ListTools Comp.
+Require Export mathcomp.ssreflect.path.
 Import Bool.
 
 Definition asymmetric {T} (R : rel T) := (forall x y : T, R x y = ~~(R y x)).
@@ -304,8 +304,8 @@ elim: cs => [|c cs IH] //= /andP []; case A0: by_value => /=; [intros ?|move => 
 
 End SortedTree.
 
-Implicit Arguments treeOf [[T] [R]].
-Implicit Arguments without_insert [[T] [R]].
+Global Arguments treeOf [T] [R].
+Global Arguments without_insert [T] [R].
 
 (* find/has simplification tactics *)
 

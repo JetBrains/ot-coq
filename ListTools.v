@@ -463,8 +463,9 @@ Proof. elim: i xs k e1 e2s rrm => [|i IHi] xs k e1 e2s rrm.
    case Heq: (x == e2) => //. move/eqP: Heq <-. rewrite orm_0wcons addSn => H1. 
    move: H1. eapply IHe2s => /(_ e1) /= [] -> [os] ->.
  + rewrite ?addSn ?addnS; move: xs IHi => [|x xs IHi]; first by case: e2s.
-   rewrite rm_Scons orplc_Swcons => /wcons_some [rrm'] []. swap => _. swap. 
-   rewrite addSn rplc_Scons orm_Swcons => /=. swap. 
+   rewrite rm_Scons orplc_Swcons => /wcons_some [rrm'] [].
+   move => _1 _2. move: _2 _1 => _. move => _1 _2. move: _2 _1.
+   rewrite addSn rplc_Scons orm_Swcons => /=. move => _1 _2. move: _2 _1.
    maxapply IHi => /(_ e1) [] -> [os] -> /=. by eauto.
 Qed.
 
@@ -489,7 +490,7 @@ Proof. elim => [|i IHi] xs k e1 e2s rrm.
    case: e2s => [|e2 e2s] /=.
   - move=> _. case Hrplc: rplc => [rplc_r|] /=; first by eauto.
      by move: Hrplc => /rplc_noneP1; rewrite ltnNge ltnS => ->.
-  - move => /wcons_some [rrm'] []. swap => _. 
+  - move => /wcons_some [rrm'] []. move => _1 _2. move: _2 _1 => _.
     rewrite orplc_Swcons ?orm_Swcons. maxapply IHi => /(_ e1) [] -> [os] -> /=. by eauto. Qed.
 
 Theorem rplc_rmC_bef xs i k e1 e2s rrm:
@@ -622,8 +623,12 @@ size es > 0 -> rm n es xs = Some ys -> ins n es ys = Some xs.
 Proof. elim => [|n IHn] xs es ys.
  + move=> _. elim: es xs ys => [|e es IHes] [|x xs] ys //=; try (by rewrite rm_id => -> /=).
    case Heq: (x == e) => // /IHes [] <-. by move/eqP: Heq ->.
- + case: xs => [|x xs] //. case: es => //= [] [] <-. swap. rewrite orm_some cons_wcons orm_Swcons.
-   move=> /wcons_some => [] [ys'] []. swap => -> /=. maxapply IHn. by move=> /= ->.
+ + case: xs => [|x xs] //. case: es => //= [] [] <-. 
+   move => _1 _2. move: _2 _1.
+   rewrite orm_some cons_wcons orm_Swcons.
+   move=> /wcons_some => [] [ys'] []. 
+   move => _1 _2. move: _2 _1 => -> /=.
+   maxapply IHn. by move=> /= ->.
 Qed.
 
 Section AboutSizes.
@@ -646,9 +651,9 @@ Qed.
 Theorem cut_lenleq (xs : seq X) i n:
 size (cut xs i n) <= size xs.
 Proof. move: (cutSZ xs i n). case: ifP => Hleq.
- - move: (leq_subr n (size xs)). by swap => ->.
+ - move: (leq_subr n (size xs)). by (move => _1 _2; move: _2 _1 => ->).
  - case: ifP => Hleq'; move=> /eq_leq =>//. 
-   move: Hleq'. swap. by apply leq_trans. Qed.
+   move: Hleq'. move => _1 _2; move: _2 _1. by apply leq_trans. Qed.
 
 End AboutSizes.
 

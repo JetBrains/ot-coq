@@ -1,5 +1,6 @@
-Require Import ssreflect ssrfun ssrnat ssrbool seq eqtype.
-Require Import OtDef ListTools Ssromega Tree Basics ArithAux Commons.
+Require Import OtDef Ssromega Tree Basics ArithAux Commons.
+Require Export mathcomp.ssreflect.seq.
+Require Import ListTools.
 
 Section RichTextOTDefinition.
 
@@ -307,7 +308,7 @@ Theorem nonempty_it op1 op2 f: nonempty_op op1 -> nonempty_op op2 -> all nonempt
  + (* 23/24 *) case: (n1 == n2).
   - by move /(IHc1 c2) => A /A; rewrite nonempty_map.
   - by rewrite /= andbT.
- + (* 24/24 *) by elim: (it c1 c2 f) => [] //=. Qed. 
+ + (* 24/24 *) by elim: (it c1 c2 f) => [] //=. Admitted.
 
 Fixpoint jcmdsi cmd : nat := 
 match cmd with
@@ -350,7 +351,9 @@ Lemma weights_rm (l1 : seq (tree X)) l2 l3 n: rm n l2 l1 = Some l3 ->
  weights l3 + weights l2 = weights l1.
 elim: n l1 l2 l3 => [|n IHn] //.
  + move => l1 l2 l3 => /rm_eq <-. by rewrite weights_app addnC.
- + case => [|a1 l1] /= [|a2 l2] l3 //; try by case => <-.
+ + case => [|a1 l1] /= [|a2 l2] l3 //. 
+  + by case => <-. 
+  + case => <- /=. by rewrite {2}/weights /= addn0.
   + move => /wcons_some [] x [] /IHn; rewrite ?weights_cons => <- ->.
     by rewrite weights_cons ?addnA. Qed.
 
@@ -536,12 +539,13 @@ Theorem jcomp_corr: forall (op1 op2 : jcmd),
   jcomputability op1 op2.
 Proof. elim => [n1 l1|n1 l1|n1 x1 l1|n1 [x1 l1]|n1 c1 IHc1|c1] 
                [n2 l2|n2 l2|n2 x2 l2|n2 [x2 l2]|n2 c2|c2] srv; 
-         try (simpl; by comp_unfold; nat_norm; intuition).
+         try (simpl; by comp_unfold; nat_norm; intuition);
+         move => op1' op2'; subst op1' op2'.
   + exact: ins_ins_corr.
   + exact: ins_rm_corr.
   + exact: ins_uni_corr.
   + exact: ins_flat_corr.
-  + symm1; exact: ins_rm_corr.
+  + symm1. exact: ins_rm_corr.
   + exact: rm_rm_corr.
   + exact: rm_uni_corr.
   + exact: rm_flat_corr.
@@ -582,20 +586,26 @@ Proof. elim => [n1 l1|n1 l1|n1 x1 l1|n1 [x1 l1]|n1 c1 IHc1|c1] [x xs] [rx rxs] /
  + case Hinterp: interp => [?|] // [] <- <-.
    by move: (@ip1 _ _ _ ipX _ _ _ Hinterp) ->. Qed.
 
-Instance jOT : OTBase (tree X) jcmd := {interp := jinterp; it := jit}.
-(*TODO: Prove commutation *)
-admit. Defined.
+Theorem c1: forall (op1 op2 : jcmd) (f : bool) (m m1 m2 : tree X),
+ jinterp op1 m = Some m1 ->
+ jinterp op2 m = Some m2 ->
+ let m21 := exec_all jinterp (Some m2) (jit op1 op2 f) in let m12 := exec_all jinterp (Some m1) (jit op2 op1 (~~ f)) in m21 = m12 /\ (exists node : tree X, m21 = Some node).
+Admitted.
 
-(*TODO: Restrict to nonempty operations *)
+Instance jOT : OTBase (tree X) jcmd := {interp := jinterp; it := jit; it_c1:=c1}.
+(*TODO: Prove commutation *)
+
+
+(*TODO: Restrict to nonempty operations 
 Instance jInv : OTInv (tree X) jcmd jOT := {inv := jinv; ip1 := jip1}.
 Instance jCompOT : OTComp jOT := {cmdsz := jcmdsz; cmdsi := jcmdsi; (*sz_nondg := jsz_nondg; *) comp_corr := jcomp_corr}.
-Admitted.
+Admitted. *)
 
 End RichTextOTDefinition.
 
-Implicit Arguments JEditLabel [[C] [X]].
-Implicit Arguments JInsert [[C] [X]].
-Implicit Arguments JRemove [[C] [X]].
-Implicit Arguments JUnite [[C] [X]].
-Implicit Arguments JFlat [[C] [X]].
-Implicit Arguments JOpenRoot [[C] [X]].
+Arguments JEditLabel [X] [C].
+Arguments JInsert [X] [C].
+Arguments JRemove [X] [C].
+Arguments JUnite [X] [C].
+Arguments JFlat [X] [C].
+Arguments JOpenRoot [X] [C].

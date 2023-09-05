@@ -1,18 +1,22 @@
-Require Import ssreflect ssrbool ssrnat ssrint eqtype seq.
-Require Import ListTools Tree OtDef RichText String Basics.
+Require Import Commons Tree OtDef RichText String Basics.
+Require Import mathcomp.algebra.ssrint.
+Require Import ListTools.
 
 Import intZmod.
 
-Check int.
+Theorem c1: forall (op1 op2 : int) (f : bool) (m m1 m2 : int),
+ (fun c m0 : int => Some (addz m0 c)) op1 m = Some m1 ->
+ (fun c m0 : int => Some (addz m0 c)) op2 m = Some m2 ->
+ let m21 := exec_all (fun c m0 : int => Some (addz m0 c)) (Some m2) ((fun o1 : int => fun=> (fun=> [:: o1])) op1 op2 f) in
+ let m12 := exec_all (fun c m0 : int => Some (addz m0 c)) (Some m1) ((fun o1 : int => fun=> (fun=> [:: o1])) op2 op1 (~~ f)) in m21 = m12 /\ (exists node : int, m21 = Some node).
+ rewrite /exec_all /flip /= => m n _ x x1 x2 [] <- [] <-; split. by rewrite -addzA (addzC n) -addzA. eauto. Qed.
 
 Instance intOT : OTBase int int
- := {interp := (fun c m => Some (addz m c)); it := (fun o1 o2 f => [:: o1])}.
- rewrite /exec_all /flip /= => m n _ x x1 x2 [] <- [] <-; split. by rewrite -addzA (addzC n) -addzA. eauto.
-Defined.
+ := {interp := (fun c m => Some (addz m c)); it := (fun o1 o2 f => [:: o1]); it_c1:=c1}.
 
-Instance intIP : OTInv _ _ intOT := {inv := (fun x => oppz x)}.
- move=> m x xr [] <- /=. by rewrite -addzA (addzC m) addNz addzC add0z.
-Defined.
+Theorem ip1: forall op m mr : int, interp op m = Some mr -> interp ([eta oppz] op) mr = Some m.
+ move=> m x xr [] <- /=. by rewrite -addzA (addzC m) addNz addzC add0z. Qed.
+Instance intIP : OTInv _ _ intOT := {inv := (fun x => oppz x); ip1:=ip1}.
 
 Definition nattree := tree nat.
 Definition inttree := tree int.

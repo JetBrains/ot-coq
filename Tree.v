@@ -6,7 +6,7 @@ Section TreeDef.
 Unset Elimination Schemes.
 Inductive tree (T : Type) : Type := Node of T & seq (tree T).
 
-Global Implicit Arguments Node [[T]].
+Global Arguments Node [T].
 
 Context {T : Type}.
 
@@ -110,6 +110,8 @@ End TreeDef.
 
 Definition tree_eqMixin (T : eqType) := PcanEqMixin (@codeK T).
 Canonical tree_eqType (T : eqType) := @EqType (tree T) (tree_eqMixin T).
+
+Check @Node.
 
 Lemma tree_eqP (T : eqType) (t1 t2 : T) l1 l2: Node t1 l1 == Node t2 l2 <-> (t1 = t2) /\ (l1 = l2).
 split. by move /eqP => [] -> ->. by case => -> ->. Qed.

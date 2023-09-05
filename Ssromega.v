@@ -1,4 +1,8 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq Omega.
+From Coq Require Import ssreflect ssrfun ssrbool Omega.
+Require Import mathcomp.ssreflect.eqtype.
+Require Import mathcomp.ssreflect.seq.
+Require Import mathcomp.ssreflect.ssrnat.
+
 
 (* Taken from http://github.com/pi8027/formalized-postscript/blob/master/stdlib_ext.v *)
 

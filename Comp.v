@@ -1,4 +1,4 @@
-Require Import ssreflect ssrnat ssrbool seq Ssromega OtDef Commons.
+Require Import Ssromega OtDef Commons.
 
 Lemma ltnSn n: n < S n. ssromega. Qed.
 Lemma list_const: forall X X' (l : list X') (x : X), match l with nil => x | _ :: _ => x end = x.
@@ -148,7 +148,6 @@ End OTCorrectness.
 (* =============================================== *)
 
 Module TransformApp.
-Require Import ssreflect ssrbool ssrfun ssrnat.
 
 Corollary tstab1 {cmd} t: forall n (op1 op2 op1' op2' : list cmd),
 transform t op1 op2 n = Some (op2', op1') -> transform t op1 op2 (n.+1) = Some (op2', op1').

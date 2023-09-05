@@ -1,4 +1,8 @@
-Require Export ssreflect ssrfun ssrbool eqtype seq ssrnat Ssromega ssrbool Basics Equality.
+From Coq Require Export ssreflect ssrfun ssrbool Omega Basics Equality.
+Require Export mathcomp.ssreflect.eqtype.
+Require Export mathcomp.ssreflect.seq.
+Require Export mathcomp.ssreflect.ssrnat.
+Require Export Ssromega.
 
 Definition bind {X} {Y} (f : X -> option Y) (x : option X) : option Y :=
  match x with Some x' => f x' | _ => None end.
@@ -19,10 +23,10 @@ Definition maybe_eq {X} (eq : X -> X -> Prop) : option X -> option X -> Prop :=
     end.
 
 Lemma fadd {X} {F : X -> nat} n l: foldl addn n [seq F i | i <- l] = n + foldl addn 0 [seq F i | i <- l].
-elim: l n => [|l ls IHl] //= n. by rewrite add0n (IHl (n + F l)) (IHl (F l)) addnA. Qed.
+elim: l n => [|l ls IHl] //= n. by rewrite addn0. by rewrite add0n (IHl (n + F l)) (IHl (F l)) addnA. Qed.
 
 Lemma faddr {X} {F : X -> nat} n l: foldr addn n [seq F i | i <- l] = n + foldr addn 0 [seq F i | i <- l].
-elim: l n => [|l ls IHl] //= n. by rewrite addnA (addnC n) -addnA -(IHl n). Qed.
+elim: l n => [|l ls IHl] //= n. by rewrite addn0. by rewrite addnA (addnC n) -addnA -(IHl n). Qed.
 
 (* Some Numeric facts*)
 
@@ -31,8 +35,6 @@ Lemma le_ex : forall i k,
 Proof. move=> i k; elim: k i => [i|k IHk]. by rewrite leqn0 => /eqP ->; exists 0.
  case => [|i]; first by exists k.+1. 
  by rewrite (leq_add2l 1) => /IHk [x] <-; exists x. Qed.
-
-Ltac swap := let _1 := fresh "H" in let _2 := fresh "H" in move => _1 _2; move: _2 _1.
 
 Lemma Nleq_ltnC: forall i k, i <= k -> k < i -> false.
 Proof. move=> i k. by rewrite leqNgt => /negbTE ->. Qed.

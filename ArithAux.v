@@ -1,4 +1,7 @@
-Require Import ssreflect ssrbool eqtype ssrnat Ssromega.
+Require Import ssreflect ssrbool.
+Require Import mathcomp.ssreflect.eqtype.
+Require Import mathcomp.ssreflect.ssrnat.
+Require Export Ssromega.
 
 CoInductive interval_point x sx y: bool -> bool -> Prop :=
  | IP_Left of y <= x : interval_point x sx y true false
@@ -110,8 +113,8 @@ Proof. rewrite /interval_interval_case. rewrite [y == x]eq_sym [sy == sx]eq_sym.
  + case: ifP; first by move/andP => [];  constructor.
    case: sy => [|sy].
   * rewrite addn0 [y <= x]leqNgt. case: (ltngtP x y)=> /=.
-   - move=> H _ -> /ltnW => H'; rewrite H'. 
-     constructor; [apply: ltnW| rewrite ?addn0|left; move/ltn_eqF: H => ->] => //. 
+   - move=> H _ _ /ltnW => H'; rewrite H'. 
+     constructor; [apply: ltnW| rewrite ?addn0|left; move/ltn_eqF: H => ->] => //.
    - move/ltnW => ? _ ? /ltnW ?. by constructor; rewrite addn0.
    - move=> ->; by constructor; rewrite ?addn0.
   * case: ifP.

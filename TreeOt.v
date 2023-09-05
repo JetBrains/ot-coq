@@ -206,13 +206,13 @@ Proof. move=> n1 l1 x ls [x1 ls1] [x2 ls2] _ _ t n2 //=; case Htr_rem: tr_rem =>
    + interp_simpl_nw. move: Htr_rem; rewrite /tr_rem; case H1: (n2 < n1).
     - move=> [] <-; rewrite (rm_some_nth_aft _ ls _ l1 n1) //.
       move: HN2. case: (bind (tree_interp t)) => //= [a|]; last by rewrite rplc_none_none.
-      move => /rplc_some []. swap => _. move: HN0 => /=. move: H1. 
+      move => /rplc_some []. move => _1 _2; move: _2 _1 => _. move: HN0 => /=. move: H1. 
       maxapply (@rplc_rmC_bef (tree_eqType X)) => /(_ a) [] -> [os] -> /=. by eauto.
     - case H2: (n1 + size l1 <= n2) => //. move=> [] <-; 
       move: (arithm1'  H2 H1) HN2 => [] {2 3 4 5 8 9}-> Hleq. 
       simpl in HN0. rewrite (rm_some_nth_bef n1 ls _ l1 (n2 - size l1)) //.
       case: (bind (tree_interp t)) => [a /=|]; last by rewrite orplc_none //=.
-      move=> /rplc_some []. swap => _. rewrite addnC. move: Hleq HN0.
+      move=> /rplc_some []. move => _1 _2; move: _2 _1 => _. rewrite addnC. move: Hleq HN0.
       maxapply (@rplc_rmC_aft (tree_eqType X)) => /(_ a) [] -> [os] -> /=. by eauto.
    + move: Htr_rem; rewrite /tr_rem; case H1: (n2 < n1) => //; 
      case H2: (n1 + size l1 <= n2) => // ?. move:H1 => /negbT. rewrite -leqNgt => H1; 
@@ -307,7 +307,7 @@ elim => [[n1 l1 | n1 l1 | c1 ]| n1 c1 IHl1] [[n2 l2 | n2 l2 | c2] | n2 c2]
        move=> /rm_cut A /A B. move: (B (leqnn _) (leq_addr _ _)).
        rewrite addnC subnn => [] [] /= -> [os]. rewrite -subnBA; last exact: (leqnn _).
        rewrite subnn subn0 => -> /=. by eauto.
-     - swap. move=> /rm_cut A /A B. move: H1 => /negbT. rewrite -ltnNge => /ltnW => /B C.
+     - move => _1 _2; move: _2 _1. move=> /rm_cut A /A B. move: H1 => /negbT. rewrite -ltnNge => /ltnW => /B C.
        move: (C H3) => []. rewrite addnC => -> [os] -> /=. by eauto.
      - move=> /rm_cut A /A B. move: H2 => /negbT. rewrite -ltnNge => /ltnW => /B C.
        move: (C H4) => []. rewrite addnC => -> [os] -> /=. by eauto.
@@ -355,9 +355,9 @@ elim => [[n1 l1 | n1 l1 | c1 ]| n1 c1 IHl1] [[n2 l2 | n2 l2 | c2] | n2 c2]
      case: (bind (tree_interp c2)) HN4 => [b _|] //=; last by rewrite rplc_none_none.
      case Hrplc': rplc => [a'|]. 
     - by exists (Node x2 a').
-    - move: Hrplc' => /rplc_noneP1; move: HN2 => /rplc_some []. swap => _.
+    - move: Hrplc' => /rplc_noneP1; move: HN2 => /rplc_some []. move => _1 _2; move: _2 _1 => _.
       rewrite Heqsz. by maxapply Nleq_ltnC.
-    - move: Hrplc => /rplc_noneP1. move: HN0 => /rplc_some []. swap => _.
+    - move: Hrplc => /rplc_noneP1. move: HN0 => /rplc_some []. move => _1 _2; move: _2 _1 => _.
       by maxapply Nleq_ltnC.
 Qed.
 
@@ -369,16 +369,16 @@ Proof.
  + by move=> /nodew_some [] <- /rm_ins_id ->.
  + case: l => [|x1 l1]; first by rewrite rm_id /= => ->.
    have: (0 < size (x1 :: l1)); first by exact (ltn0Sn _).
-   swap => /nodew_some [] <-. maxapply (@ins_rm_id (tree_eqType X)). by move=> /= ->.
+   move => _1 _2; move: _2 _1 => /nodew_some [] <-. maxapply (@ins_rm_id (tree_eqType X)). by move=> /= ->.
  + case Hint: interp => [a|] // [] <- <-. apply ip1 in Hint. by rewrite Hint.
  + move=> /nodew_some [] <-. case Hti: (bind (tree_interp c)) => [ti_r|]; last by rewrite rplc_none_none.
    move: Hti. case Hnth: nth => [nth_r|]; last by simpl.
-   move=> /IHc. swap. move => Hrplc. move: (Hrplc) => /rplc_nth_eq => ->. rewrite /bind => ->.
+   move=> /IHc. move => _1 _2; move: _2 _1. move => Hrplc. move: (Hrplc) => /rplc_nth_eq => ->. rewrite /bind => ->.
    rewrite orplc_some -Hrplc -Hnth orplc_some rplc_rplcC_eq. 
    case Horplc: orplc => [a|]. 
   - move: (Horplc) (Horplc). move /rplc_nth_id -> => //.
   - move: Horplc => /= /rplc_none_case []; first by rewrite Hnth.
-    move: Hrplc => /rplc_some []. swap=> _. by maxapply Nleq_ltnC.
+    move: Hrplc => /rplc_some []. move => _1 _2; move: _2 _1 => _. by maxapply Nleq_ltnC.
 Qed.
 
 Instance treeOT: (OTBase (tree X) tree_command) := {interp := tree_interp; it := tree_it; it_c1 := tree_c1}.
@@ -389,14 +389,20 @@ End TreeOTDefinition.
 Section Sandbox.
 
 Require Import Comp.
+Arguments TreeInsert [X] [cmd].
+Arguments TreeRemove [X] [cmd].
+Arguments OpenRoot [X] [cmd].
+Arguments Atomic [X] [cmd].
 
-Implicit Arguments TreeInsert [[cmd] [X]].
-Implicit Arguments TreeRemove [[cmd] [X]].
-Implicit Arguments OpenRoot [[cmd] [X]].
-Implicit Arguments Atomic [[cmd] [X]].
-
-Instance unitOT : OTBase nat_eqType unit := {interp := (fun c m => Some m); it := (fun _ _ _ => [:: tt])}.
+Theorem c1: forall (op1 op2 : unit) (f : bool) (m m1 m2 : nat_eqType),
+ (fun=> [eta Some]) op1 m = Some m1 ->
+ (fun=> [eta Some]) op2 m = Some m2 ->
+ let m21 := exec_all (fun=> [eta Some]) (Some m2) ((fun=> (fun=> (fun=> [:: tt]))) op1 op2 f) in
+ let m12 := exec_all (fun=> [eta Some]) (Some m1) ((fun=> (fun=> (fun=> [:: tt]))) op2 op1 (~~ f)) in m21 = m12 /\ (exists node : nat_eqType, m21 = Some node).
 move => _ _ _ m m1 m2 [] <- [] <- /=. split. done. exists m. by rewrite /flip. Qed.
+
+Instance unitOT : OTBase nat_eqType unit := {interp := (fun c m => Some m); it := (fun _ _ _ => [:: tt]); it_c1:=c1}.
+
 Definition it1 := transform (@tree_it nat_eqType unit unitOT).
 
 Definition abclist := [:: Node 10 [::]; Node 11 [::]; Node 12 [::]].

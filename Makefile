@@ -79,19 +79,18 @@ endif
 # Files dispatching. #
 #                    #
 ######################
-
-VFILES:=ArithAux.v\
+VFILES:= Ssromega.v\
   Commons.v\
-  Comp.v\
-  Fs.v\
   ListTools.v\
   OtDef.v\
-  RichTextTests.v\
-  RichText.v\
-  SortedTree.v\
-  Ssromega.v\
+  Comp.v\
+  ArithAux.v\
+  Tree.v\
   TreeOt.v\
-  Tree.v
+  SortedTree.v\
+  Fs.v\
+  RichText.v\
+  RichTextTests.v\
 
 -include $(addsuffix .d,$(VFILES))
 .SECONDARY: $(addsuffix .d,$(VFILES))
